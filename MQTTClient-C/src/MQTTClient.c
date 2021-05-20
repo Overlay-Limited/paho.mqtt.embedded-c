@@ -538,23 +538,12 @@ int MQTTSubscribeWithResults(MQTTClient* c, const char* topicFilter, enum QoS qo
     if ((rc = sendPacket(c, len, &timer)) != SUCCESS) // send the subscribe packet
         goto exit;             // there was a problem
 
-    if (waitfor(c, SUBACK, &timer) == SUBACK)      // wait for suback
+    if (waitfor(c, SUBACK, &timer) != SUBACK)      // wait for suback
     {
-        int count = 0;
-        unsigned short mypacketid;
-        data->grantedQoS = QOS0;
-        if (MQTTDeserialize_suback(&mypacketid, 1, &count, (int*)&data->grantedQoS, c->readbuf, c->readbuf_size) == 1)
-        {
-            if (data->grantedQoS != 0x80)
-                rc = MQTTSetMessageHandler(c, topicFilter, messageHandler);
-        }
-    }
-    else
         rc = FAILURE;
+    }
 
 exit:
-    if (rc == FAILURE)
-        MQTTCloseSession(c);
 #if defined(MQTT_TASK)
 	  MutexUnlock(&c->mutex);
 #endif
