@@ -191,7 +191,7 @@ int deliverMessage(MQTTClient* c, MQTTString* topicName, MQTTMessage* message)
             {
                 MessageData md;
                 NewMessageData(&md, topicName, message);
-                c->messageHandlers[i].fp(&md);
+                c->messageHandlers[i].fp(&md, c->messageHandlers[i].user_p);
                 rc = SUCCESS;
             }
         }
@@ -201,7 +201,7 @@ int deliverMessage(MQTTClient* c, MQTTString* topicName, MQTTMessage* message)
     {
         MessageData md;
         NewMessageData(&md, topicName, message);
-        c->defaultMessageHandler(&md);
+        c->defaultMessageHandler(&md, NULL);
         rc = SUCCESS;
     }
 
@@ -472,7 +472,7 @@ int MQTTConnect(MQTTClient* c, MQTTPacket_connectData* options)
 }
 
 
-int MQTTSetMessageHandler(MQTTClient* c, const char* topicFilter, messageHandler messageHandler)
+int MQTTSetMessageHandler(MQTTClient *c, const char *topicFilter, messageHandler messageHandler, void *user_p)
 {
     int rc = FAILURE;
     int i = -1;
@@ -486,6 +486,7 @@ int MQTTSetMessageHandler(MQTTClient* c, const char* topicFilter, messageHandler
             {
                 c->messageHandlers[i].topicFilter = NULL;
                 c->messageHandlers[i].fp = NULL;
+                c->messageHandlers[i].user_p = NULL;
             }
             rc = SUCCESS; /* return i when adding new subscription */
             break;
@@ -508,14 +509,15 @@ int MQTTSetMessageHandler(MQTTClient* c, const char* topicFilter, messageHandler
         {
             c->messageHandlers[i].topicFilter = topicFilter;
             c->messageHandlers[i].fp = messageHandler;
+            c->messageHandlers[i].user_p = user_p;
         }
     }
     return rc;
 }
 
 
-int MQTTSubscribeWithResults(MQTTClient* c, const char* topicFilter, enum QoS qos,
-       messageHandler messageHandler, MQTTSubackData* data)
+int MQTTSubscribeWithResults(MQTTClient *c, const char *topicFilter, enum QoS qos, messageHandler messageHandler,
+                             void *user_p, MQTTSubackData *data)
 {
     int rc = FAILURE;
     Timer timer;
@@ -551,11 +553,10 @@ exit:
 }
 
 
-int MQTTSubscribe(MQTTClient* c, const char* topicFilter, enum QoS qos,
-       messageHandler messageHandler)
+int MQTTSubscribe(MQTTClient *c, const char *topicFilter, enum QoS qos, messageHandler messageHandler, void *user_p)
 {
     MQTTSubackData data;
-    return MQTTSubscribeWithResults(c, topicFilter, qos, messageHandler, &data);
+    return MQTTSubscribeWithResults(c, topicFilter, qos, messageHandler, NULL, &data);
 }
 
 
@@ -587,7 +588,7 @@ int MQTTUnsubscribe(MQTTClient* c, const char* topicFilter)
         if (MQTTDeserialize_unsuback(&mypacketid, c->readbuf, c->readbuf_size) == 1)
         {
             /* remove the subscription message handler associated with this topic, if there is one */
-            MQTTSetMessageHandler(c, topicFilter, NULL);
+            MQTTSetMessageHandler(c, topicFilter, NULL, NULL);
         }
     }
     else

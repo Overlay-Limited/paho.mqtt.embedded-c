@@ -235,7 +235,7 @@ int main(int argc, char** argv)
 	printf("Connected %d\n", rc);
     
     printf("Subscribing to %s\n", topic);
-	rc = MQTTSubscribe(&c, topic, opts.qos, messageArrived);
+	rc = MQTTSubscribe(&c, topic, opts.qos, messageArrived, NULL);
 	printf("Subscribed %d\n", rc);
 
 	while (!toStop)

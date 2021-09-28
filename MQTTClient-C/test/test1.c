@@ -388,7 +388,7 @@ int test1(struct Options options)
 	if (rc != SUCCESS)
 		goto exit;
 
-	rc = MQTTSubscribe(&c, test_topic, subsqos, messageArrived);
+	rc = MQTTSubscribe(&c, test_topic, subsqos, messageArrived, NULL);
 	assert("Good rc from subscribe", rc == SUCCESS, "rc was %d", rc);
 
 	test1_sendAndReceive(&c, 0, test_topic);
@@ -482,7 +482,7 @@ int test2(struct Options options)
          "sessionPresent was %d", connack.sessionPresent);
 
   /* set up some state */
-  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived, &suback);
+  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived, NULL, &suback);
   assert("Good rc from subscribe", rc == SUCCESS, "rc was %d", rc);
   assert("Good granted QoS", suback.grantedQoS == subsqos,
          "granted QoS was %d", suback.grantedQoS);
@@ -653,14 +653,14 @@ int test3(struct Options options)
   assert("Session present is 0", connack.sessionPresent == 0,
            "sessionPresent was %d", connack.sessionPresent);
 
-  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived, &suback);
+  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived, NULL, &suback);
   assert("Good rc from subscribe", rc == SUCCESS, "rc was %d", rc);
   assert("Granted QoS rc from subscribe", suback.grantedQoS == QOS2,
          "rc was %d", suback.grantedQoS);
 
   check_subs_exist(&c, test_topic, 1);
 
-  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived2, &suback);
+  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived2, NULL, &suback);
   assert("Good rc from subscribe", rc == SUCCESS, "rc was %d", rc);
   assert("Granted QoS rc from subscribe", suback.grantedQoS == QOS2,
                   "rc was %d", suback.grantedQoS);
@@ -684,7 +684,7 @@ int test3(struct Options options)
 
   check_subs_exist(&c, test_topic, 2);
 
-  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived, &suback);
+  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived, NULL, &suback);
   assert("Good rc from subscribe", rc == SUCCESS, "rc was %d", rc);
   assert("Granted QoS rc from subscribe", suback.grantedQoS == QOS2,
             "rc was %d", suback.grantedQoS);
@@ -724,7 +724,7 @@ int test3(struct Options options)
 
   check_subs_exist(&c, test_topic, 1);
 
-  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived2, &suback);
+  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived2, NULL, &suback);
   assert("Good rc from subscribe", rc == SUCCESS, "rc was %d", rc);
   assert("Granted QoS rc from subscribe", suback.grantedQoS == QOS2,
                   "rc was %d", suback.grantedQoS);
@@ -746,7 +746,7 @@ int test3(struct Options options)
   assert("Session present is 0", connack.sessionPresent == 0,
            "sessionPresent was %d", connack.sessionPresent);
 
-  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived2, &suback);
+  rc = MQTTSubscribeWithResults(&c, test_topic, subsqos, messageArrived2, NULL, &suback);
   assert("Good rc from subscribe", rc == SUCCESS, "rc was %d", rc);
   assert("Granted QoS rc from subscribe", suback.grantedQoS == QOS2,
                   "rc was %d", suback.grantedQoS);
