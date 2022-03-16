@@ -54,7 +54,7 @@
 enum QoS { QOS0, QOS1, QOS2, SUBFAIL=0x80 };
 
 /* all failure return codes must be negative */
-enum returnCode { BUFFER_OVERFLOW = -2, FAILURE = -1, SUCCESS = 0 };
+enum returnCode { NETWORK_FAILURE =-3, BUFFER_OVERFLOW = -2, FAILURE = -1, SUCCESS = 0 };
 
 /* The Platform specific header must define the Network and Timer structures and functions
  * which operate on them.
@@ -126,10 +126,9 @@ typedef struct MQTTClient
 
     Network* ipstack;
     Timer last_sent, last_received;
-#if defined(MQTT_TASK)
-    Mutex mutex;
-    Thread thread;
-#endif
+    volatile bool stop_event;
+    volatile bool pause_event;
+    pthread_t thread;
 } MQTTClient;
 
 #define DefaultClient {0, 0, 0, 0, NULL, NULL, 0, 0, 0}
@@ -223,13 +222,18 @@ DLLExport int MQTTYield(MQTTClient* client, int time);
  */
 DLLExport int MQTTIsConnected(MQTTClient* client);
 
-#if defined(MQTT_TASK)
 /** MQTT start background thread for a client.  After this, MQTTYield should not be called.
 *  @param client - the client object to use
 *  @return success code
 */
 DLLExport int MQTTStartTask(MQTTClient* client);
-#endif
+
+DLLExport int MQTTPauseTask(MQTTClient* client);
+
+DLLExport int MQTTResumeTask(MQTTClient* client);
+
+DLLExport int MQTTStopTask(MQTTClient* client);
+
 
 #if defined(__cplusplus)
      }

@@ -45,6 +45,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <stdbool.h>
 
 typedef struct Timer
 {
@@ -60,6 +61,7 @@ int TimerLeftMS(Timer*);
 typedef struct Network
 {
 	int my_socket;
+    pthread_mutex_t mutex;
 	int (*mqttread) (struct Network*, unsigned char*, int, int);
 	int (*mqttwrite) (struct Network*, unsigned char*, int, int);
 } Network;
@@ -70,5 +72,6 @@ int linux_write(Network*, unsigned char*, int, int);
 DLLExport void NetworkInit(Network*);
 DLLExport int NetworkConnect(Network*, char*, int);
 DLLExport void NetworkDisconnect(Network*);
+DLLExport void NetworkDestroy(Network* n);
 
 #endif
