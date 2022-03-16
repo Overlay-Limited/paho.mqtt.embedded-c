@@ -113,7 +113,7 @@ int linux_write(Network *n, unsigned char *buffer, int len, int timeout_ms) {
     block_until(n->my_socket, POLLOUT);
     rc = (int) send(n->my_socket, buffer, len, MSG_NOSIGNAL);
     if (rc < 0) {
-        printf("BADD\n");
+        printf("Error Sending | rc: %d | errno: %d\n", rc, errno);
     }
     pthread_mutex_unlock(&n->mutex);
     return rc;
@@ -129,7 +129,7 @@ void NetworkInit(Network *n) {
 
 
 int NetworkConnect(Network *n, char *addr, int port) {
-    int type = SOCK_STREAM;
+    int type = SOCK_STREAM | SOCK_NONBLOCK;
     struct sockaddr_in address;
     int rc = -1;
     sa_family_t family = AF_INET;
@@ -166,8 +166,10 @@ int NetworkConnect(Network *n, char *addr, int port) {
             rc = -1;
     }
 
+    // Set as High Priority
     int optval=7; // valid values are in the range [1,7]
     setsockopt(n->my_socket, SOL_SOCKET, SO_PRIORITY, &optval, sizeof(optval));
+
     return rc;
 }
 
