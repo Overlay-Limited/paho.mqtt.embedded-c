@@ -18,6 +18,7 @@
 #include <pthread.h>
 #include <sys/ioctl.h>
 #include "MQTTLinux.h"
+#include "../MQTTClient.h"
 #include <poll.h>
 
 void TimerInit(Timer *timer) {
@@ -114,6 +115,9 @@ int linux_write(Network *n, unsigned char *buffer, int len, int timeout_ms) {
     rc = (int) send(n->my_socket, buffer, len, MSG_NOSIGNAL);
     if (rc < 0) {
         printf("Error Sending | rc: %d | errno: %d\n", rc, errno);
+        if (errno == EPIPE) {
+            rc = NETWORK_FAILURE;
+        }
     }
     pthread_mutex_unlock(&n->mutex);
     return rc;
@@ -129,7 +133,7 @@ void NetworkInit(Network *n) {
 
 
 int NetworkConnect(Network *n, char *addr, int port) {
-    int type = SOCK_STREAM | SOCK_NONBLOCK;
+    int type = SOCK_STREAM;
     struct sockaddr_in address;
     int rc = -1;
     sa_family_t family = AF_INET;

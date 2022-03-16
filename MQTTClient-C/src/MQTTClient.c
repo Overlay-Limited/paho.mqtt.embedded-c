@@ -501,8 +501,8 @@ int MQTTSubscribeWithResults(MQTTClient *c, const char *topicFilter, enum QoS qo
     len = MQTTSerialize_subscribe(c->buf, c->buf_size, 0, getNextPacketId(c), 1, &topic, (int *) &qos);
     if (len <= 0)
         goto exit;
-    if ((rc = sendPacket(c, len, &timer)) != SUCCESS) // send the subscribe packet
-        goto exit;             // there was a problem
+    if ((rc = sendPacket(c, len, &timer)) != SUCCESS)
+        goto exit;
 
     if (waitfor(c, SUBACK, &timer) != SUBACK)      // wait for suback
     {
