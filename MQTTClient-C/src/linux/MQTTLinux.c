@@ -166,6 +166,8 @@ int NetworkConnect(Network *n, char *addr, int port) {
             rc = -1;
     }
 
+    int optval=7; // valid values are in the range [1,7]
+    setsockopt(n->my_socket, SOL_SOCKET, SO_PRIORITY, &optval, sizeof(optval));
     return rc;
 }
 
