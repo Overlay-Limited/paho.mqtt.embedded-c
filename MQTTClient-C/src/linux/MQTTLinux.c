@@ -76,11 +76,21 @@ int linux_read(Network *n, unsigned char *buffer, int len, int timeout_ms) {
         interval.tv_usec = 100;
     }
 
-    pthread_mutex_lock(&n->mutex);
-    setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *) &interval, sizeof(struct timeval));
+    int rc;
+    rc = pthread_mutex_lock(&n->mutex);
+    if (rc != EXIT_SUCCESS) {
+        printf("Lock Fail | rc: %d\n", rc);
+        return FAILURE;
+    }
+
+    rc = setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *) &interval, sizeof(struct timeval));
+    if (rc != EXIT_SUCCESS) {
+        printf("BAD\n");
+    }
+
     int bytes = 0;
     while (bytes < len) {
-        int rc = recv(n->my_socket, &buffer[bytes], (size_t) (len - bytes), 0);
+        rc = (int) recv(n->my_socket, &buffer[bytes], (size_t) (len - bytes), 0);
         if (rc == -1) {
             if (errno != EAGAIN && errno != EWOULDBLOCK)
                 bytes = -1;
@@ -105,9 +115,14 @@ int linux_write(Network *n, unsigned char *buffer, int len, int timeout_ms) {
     tv.tv_usec = usec;  // Not init'ing this can cause strange errors
 
 
-    pthread_mutex_lock(&n->mutex);
+    int rc;
+    rc = pthread_mutex_lock(&n->mutex);
+    if (rc != EXIT_SUCCESS) {
+        printf("Lock Fail | rc: %d\n", rc);
+        return FAILURE;
+    }
 
-    int rc = setsockopt(n->my_socket, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, sizeof(struct timeval));
+    rc = setsockopt(n->my_socket, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, sizeof(struct timeval));
     if (rc != EXIT_SUCCESS) {
         printf("BAD\n");
     }
@@ -171,7 +186,7 @@ int NetworkConnect(Network *n, char *addr, int port) {
     }
 
     // Set as High Priority
-    int optval=7; // valid values are in the range [1,7]
+    int optval = 7; // valid values are in the range [1,7]
     setsockopt(n->my_socket, SOL_SOCKET, SO_PRIORITY, &optval, sizeof(optval));
 
     return rc;
