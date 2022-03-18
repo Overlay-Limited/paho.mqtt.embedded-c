@@ -133,7 +133,6 @@ static int readPacket(MQTTClient *c, Timer *timer) {
         rc = 0;
         goto exit;
     }
-
     header.byte = c->readbuf[0];
     rc = header.bits.type;
     if (c->keepAliveInterval > 0)
@@ -248,7 +247,7 @@ int cycle(MQTTClient *c, Timer *timer) {
             rc = SUCCESS;
 
     int packet_type = readPacket(c, timer);     /* read the socket, see what work is due */
-//    printf("Found: %d [%lu]\n", packet_type, pthread_self());
+//    printf("Found: %d\n", packet_type);
 //    fflush(stdout);
     switch (packet_type) {
         default:
@@ -413,6 +412,7 @@ int MQTTConnectWithResults(MQTTClient *c, MQTTPacket_connectData *options, MQTTC
     c->keepAliveInterval = options->keepAliveInterval;
     c->cleansession = options->cleansession;
     TimerCountdown(&c->last_received, c->keepAliveInterval);
+
     if ((len = MQTTSerialize_connect(c->buf, c->buf_size, options)) <= 0)
         goto exit;
 
@@ -429,7 +429,6 @@ int MQTTConnectWithResults(MQTTClient *c, MQTTPacket_connectData *options, MQTTC
             rc = FAILURE;
     } else
         rc = FAILURE;
-
     exit:
     if (rc == SUCCESS) {
         c->isconnected = 1;
@@ -586,8 +585,7 @@ int MQTTPublish(MQTTClient *c, const char *topicName, MQTTMessage *message) {
         goto exit;
     if ((rc = sendPacket(c, len, &timer)) != SUCCESS) // send the subscribe packet
         goto exit; // there was a problem
-//    else
-//        printf("Successful Publish\n");
+
     if (message->qos == QOS1) {
         if (waitfor(c, PUBACK, &timer) == PUBACK) {
             unsigned short mypacketid;

@@ -57,18 +57,18 @@ int TimerLeftMS(Timer *timer) {
 }
 
 /* Wait for a descriptor */
-static int block_until(int fd, short event) {
+static int block_until(int fd, short event, int timeout) {
     struct pollfd fds[1];
-
     fds[0].fd = fd;
     fds[0].events = event;
-
-    int x = poll(fds, 1, -1);
-    return x;
+    poll(fds, 1, timeout);
+    return fds[0].revents & event;
 }
 
 int linux_read(Network *n, unsigned char *buffer, int len, int timeout_ms) {
-    block_until(n->my_socket, POLLIN);
+    if (!block_until(n->my_socket, POLLIN | POLLRDBAND, timeout_ms)) {
+        return 0;
+    }
 
     struct timeval interval = {timeout_ms / 1000, (timeout_ms % 1000) * 1000};
     if (interval.tv_sec < 0 || (interval.tv_sec == 0 && interval.tv_usec <= 0)) {
@@ -82,15 +82,15 @@ int linux_read(Network *n, unsigned char *buffer, int len, int timeout_ms) {
         printf("Lock Fail | rc: %d\n", rc);
         return FAILURE;
     }
-
     rc = setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *) &interval, sizeof(struct timeval));
     if (rc != EXIT_SUCCESS) {
-        printf("BAD\n");
+        printf("Socket Operation Failed\n");
     }
 
     int bytes = 0;
     while (bytes < len) {
         rc = (int) recv(n->my_socket, &buffer[bytes], (size_t) (len - bytes), 0);
+
         if (rc == -1) {
             if (errno != EAGAIN && errno != EWOULDBLOCK)
                 bytes = -1;
@@ -101,19 +101,23 @@ int linux_read(Network *n, unsigned char *buffer, int len, int timeout_ms) {
         } else
             bytes += rc;
     }
+
     pthread_mutex_unlock(&n->mutex);
     return bytes;
 }
 
 
 int linux_write(Network *n, unsigned char *buffer, int len, int timeout_ms) {
+    if (!block_until(n->my_socket, POLLOUT | POLLWRBAND, timeout_ms)) {
+        return 0;
+    }
+
     int sec, usec;
     sec = timeout_ms / 1000;
     usec = timeout_ms % 1000 * 1000;
     struct timeval tv;
     tv.tv_sec = sec;  /* 30 Secs Timeout */
     tv.tv_usec = usec;  // Not init'ing this can cause strange errors
-
 
     int rc;
     rc = pthread_mutex_lock(&n->mutex);
@@ -126,7 +130,7 @@ int linux_write(Network *n, unsigned char *buffer, int len, int timeout_ms) {
     if (rc != EXIT_SUCCESS) {
         printf("BAD\n");
     }
-    block_until(n->my_socket, POLLOUT);
+
     rc = (int) send(n->my_socket, buffer, len, MSG_NOSIGNAL);
     if (rc < 0) {
         printf("Error Sending | rc: %d | errno: %d\n", rc, errno);
