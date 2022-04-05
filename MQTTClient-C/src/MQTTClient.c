@@ -519,9 +519,7 @@ int MQTTSubscribeWithResults(MQTTClient *c, const char *topicFilter, enum QoS qo
 
 int MQTTSubscribe(MQTTClient *c, const char *topicFilter, enum QoS qos, messageHandler messageHandler, void *user_p) {
     MQTTSubackData data;
-//    MQTTPauseTask(c);
     int rc = MQTTSubscribeWithResults(c, topicFilter, qos, messageHandler, NULL, &data);
-//    MQTTResumeTask(c);
     return rc;
 }
 

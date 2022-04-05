@@ -134,7 +134,7 @@ int linux_write(Network *n, unsigned char *buffer, int len, int timeout_ms) {
     rc = (int) send(n->my_socket, buffer, len, MSG_NOSIGNAL);
     if (rc < 0) {
         printf("Error Sending | rc: %d | errno: %d\n", rc, errno);
-        if (errno == EPIPE) {
+        if (errno == EPIPE || errno ==  ECONNRESET) {
             rc = NETWORK_FAILURE;
         }
     }
