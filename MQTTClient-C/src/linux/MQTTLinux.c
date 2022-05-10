@@ -32,7 +32,6 @@ char TimerIsExpired(Timer *timer) {
     return res.tv_sec < 0 || (res.tv_sec == 0 && res.tv_usec <= 0);
 }
 
-
 void TimerCountdownMS(Timer *timer, unsigned int timeout) {
     struct timeval now;
     gettimeofday(&now, NULL);
@@ -40,14 +39,12 @@ void TimerCountdownMS(Timer *timer, unsigned int timeout) {
     timeradd(&now, &interval, &timer->end_time);
 }
 
-
 void TimerCountdown(Timer *timer, unsigned int timeout) {
     struct timeval now;
     gettimeofday(&now, NULL);
     struct timeval interval = {timeout, 0};
     timeradd(&now, &interval, &timer->end_time);
 }
-
 
 int TimerLeftMS(Timer *timer) {
     struct timeval now, res;
@@ -66,7 +63,7 @@ static int block_until(int fd, short event, int timeout) {
 }
 
 int linux_read(Network *n, unsigned char *buffer, int len, int timeout_ms) {
-    if (!block_until(n->my_socket, POLLIN | POLLRDBAND, timeout_ms)) {
+    if (!block_until(n->my_socket, POLLIN, timeout_ms)) {
         return 0;
     }
 
@@ -76,12 +73,8 @@ int linux_read(Network *n, unsigned char *buffer, int len, int timeout_ms) {
         interval.tv_usec = 100;
     }
 
+
     int rc;
-    rc = pthread_mutex_lock(&n->mutex);
-    if (rc != EXIT_SUCCESS) {
-        printf("Lock Fail | rc: %d\n", rc);
-        return FAILURE;
-    }
     rc = setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *) &interval, sizeof(struct timeval));
     if (rc != EXIT_SUCCESS) {
         printf("Socket Operation Failed\n");
@@ -102,13 +95,11 @@ int linux_read(Network *n, unsigned char *buffer, int len, int timeout_ms) {
             bytes += rc;
     }
 
-    pthread_mutex_unlock(&n->mutex);
     return bytes;
 }
 
-
 int linux_write(Network *n, unsigned char *buffer, int len, int timeout_ms) {
-    if (!block_until(n->my_socket, POLLOUT | POLLWRBAND, timeout_ms)) {
+    if (!block_until(n->my_socket, POLLOUT, timeout_ms)) {
         return 0;
     }
 
@@ -120,28 +111,20 @@ int linux_write(Network *n, unsigned char *buffer, int len, int timeout_ms) {
     tv.tv_usec = usec;  // Not init'ing this can cause strange errors
 
     int rc;
-    rc = pthread_mutex_lock(&n->mutex);
-    if (rc != EXIT_SUCCESS) {
-        printf("Lock Fail | rc: %d\n", rc);
-        return FAILURE;
-    }
-
     rc = setsockopt(n->my_socket, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, sizeof(struct timeval));
     if (rc != EXIT_SUCCESS) {
-        printf("BAD\n");
+        printf("Socket Operation Failed\n");
     }
 
     rc = (int) send(n->my_socket, buffer, len, MSG_NOSIGNAL);
     if (rc < 0) {
         printf("Error Sending | rc: %d | errno: %d\n", rc, errno);
-        if (errno == EPIPE || errno ==  ECONNRESET) {
+        if (errno == EPIPE || errno == ECONNRESET) {
             rc = NETWORK_FAILURE;
         }
     }
-    pthread_mutex_unlock(&n->mutex);
     return rc;
 }
-
 
 void NetworkInit(Network *n) {
     n->my_socket = 0;
@@ -149,7 +132,6 @@ void NetworkInit(Network *n) {
     n->mqttwrite = linux_write;
     pthread_mutex_init(&n->mutex, NULL);
 }
-
 
 int NetworkConnect(Network *n, char *addr, int port) {
     int type = SOCK_STREAM;
@@ -196,11 +178,9 @@ int NetworkConnect(Network *n, char *addr, int port) {
     return rc;
 }
 
-
 void NetworkDisconnect(Network *n) {
     close(n->my_socket);
 }
-
 
 void NetworkDestroy(Network *n) {
     pthread_mutex_destroy(&n->mutex);
