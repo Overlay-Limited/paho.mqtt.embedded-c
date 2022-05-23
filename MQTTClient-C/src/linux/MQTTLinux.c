@@ -78,6 +78,7 @@ int linux_read(Network *n, unsigned char *buffer, int len, int timeout_ms) {
     rc = setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *) &interval, sizeof(struct timeval));
     if (rc != EXIT_SUCCESS) {
         printf("Socket Operation Failed\n");
+        return rc;
     }
 
     int bytes = 0;
@@ -114,6 +115,7 @@ int linux_write(Network *n, unsigned char *buffer, int len, int timeout_ms) {
     rc = setsockopt(n->my_socket, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, sizeof(struct timeval));
     if (rc != EXIT_SUCCESS) {
         printf("Socket Operation Failed\n");
+        return rc;
     }
 
     rc = (int) send(n->my_socket, buffer, len, MSG_NOSIGNAL);
